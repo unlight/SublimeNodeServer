@@ -6,26 +6,25 @@
 
 const net = require('net');
 
-const SERVER_ADDRESS = process.argv[2];
+const SERVER_PORT = process.argv[2] || 7093;
 
-const server = net.createServer(socket => {
-  let buffer = '';
-  socket.on('data', data => {
-    buffer += data;
-    let eol;
-    while ((eol = buffer.indexOf('\n')) >= 0) {
-      const message = JSON.parse(buffer.substr(0, eol));
-      buffer = buffer.substr(eol + 1);
-      console.log('[SublimeNodeServer] Received: %s', message);
-    }
+const server = net.createServer()
+  .on('connection', socket => {
+    console.log('Connected: %j', socket.remoteAddress);
+    var buffer = new Buffer(0);
+    socket.on('data', chunk => {
+      buffer = Buffer.concat([buffer, chunk]);
+      console.log('Received: %j', chunk.toString());
+      console.log('Buffer: %j', buffer.toString());
+    });
+    socket.on("error", err => {
+      console.log("Socket error:", err);
+    });
+  })
+  .on('error', error => {
+    console.log(error);
+  })
+  .listen(SERVER_PORT, () => {
+    const address = server.address();
+    console.log('Listening: %j', address);
   });
-});
-
-server.on('error', error => {
-  throw error;
-});
-
-server.listen(SERVER_ADDRESS, () => {
-  const address = server.address();
-  console.log('[SublimeNodeServer] Listening on `%s`.', address);
-});

@@ -1,7 +1,3 @@
-"""
-SublimeNodeServer.py
-"""
-
 import getpass
 import queue
 import os
@@ -37,23 +33,6 @@ def plugin_unloaded():
     if SublimeNodeServer.thread:
         SublimeNodeServer.thread.terminate()
 
-def get_node_paths():
-    """Finds platform-specific node paths."""
-    node_paths = []
-
-    if platform.system() == 'Darwin':
-        nvm_path = "/Users/{0}/.nvm".format(getpass.getuser())
-        try:
-            with open("{0}/alias/default".format(nvm_path), "r") as file:
-                content = file.read()
-            version = content.strip()
-            node_path = "{0}/versions/node/v{1}/bin".format(nvm_path, version)
-            node_paths.append(node_path)
-        except FileNotFoundError:
-            pass
-
-    return node_paths
-
 class SublimeNodeServer(threading.Thread):
     """Manages the node server and printing its output."""
 
@@ -68,7 +47,6 @@ class SublimeNodeServer(threading.Thread):
 
     def run(self):
         env = os.environ.copy()
-        env["PATH"] += ''.join([':' + path for path in get_node_paths()])
         try:
             child = subprocess.Popen(
                 ["node", self.server_path, self.server_address],
