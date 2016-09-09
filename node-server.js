@@ -1,7 +1,3 @@
-/**
- * SublimeNodeServer.js
- * @flow
- */
 'use strict';
 
 const net = require('net');

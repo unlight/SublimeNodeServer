@@ -12,58 +12,46 @@ import sublime
 
 SERVER_ADDRESS = "127.0.0.1"
 SERVER_PORT = 7093
-SERVER_PATH = os.path.join(
-    sublime.packages_path(),
-    os.path.dirname(os.path.realpath(__file__)),
-    "SublimeNodeServer.js"
-    # "index.js"
-)
+SERVER_PATH = os.path.join(sublime.packages_path(), os.path.dirname(os.path.realpath(__file__)), "node-server.js")
 
 def plugin_loaded():
     # Called when the Sublime Text API is ready for use
     print("ready")
-    client = NodeThreadingClient()
-    client.start()
 
-    # client = socket.socket()
-    # client.connect((SERVER_ADDRESS, SERVER_PORT))
-
-    # client.send(bytes(str("Hello from plugin"), 'UTF-8'))
-    # client.close()
-
-    # data = sock.recv(1024)
-    # sock.close()
-
-    # print(data)
-    # SublimeNodeServer.thread = SublimeNodeServer(SERVER_ADDRESS, SERVER_PATH)
+    # server = SublimeNodeServer(SERVER_ADDRESS, SERVER_PATH)
+    # server.start()
     # SublimeNodeServer.thread.start()
 
-    # SublimeNodeServer.thread.client.send("Hello...")
-    # SublimeNodeServer.thread.client.send("...world!")
+    client = NodeThreadingClient()
+    client.start()
+    # client.send("Hello")
+    # client.end()
+
+
+class NodeThreadingClient(threading.Thread):
+
+    def __init__(self):
+        threading.Thread.__init__(self, name = "NodeThreadingClient")
+        self.connected = False
+        self.socket = socket.socket()
+        self.socket.connect((SERVER_ADDRESS, SERVER_PORT))
+        # self.connected = True
+
+    def send(self, s):
+        data = bytes(str(s))
+        self.socket.send(data, 'UTF-8')
+        data = self.socket.recv(16 * 1024)
+        print('Received:', repr(data))
+        
+    def end(self):
+        self.socket.close()
+        self.connected = False
+
 
 def plugin_unloaded():
     # Called just before the plugin is unloaded.
     if SublimeNodeServer.thread:
         SublimeNodeServer.thread.terminate()
-
-class NodeThreadingClient(threading.Thread):
-
-    def __init__(self):
-        threading.Thread.__init__(self, name = "NodeClientThread")
-        self.connected = False
-
-    def run(self):
-        client = socket.socket()
-        client.connect((SERVER_ADDRESS, SERVER_PORT))
-        client.send(bytes(str("Hello from plugin"), 'UTF-8'))
-        data = client.recv(16 * 1024)
-        print('Received:', repr(data))
-        client.close()
-
-    def terminate(self):
-        # Disconnects from the node server and terminates this thread.
-        self.connected = False
-
 
 class SublimeNodeServer(threading.Thread):
     # Manages the node server and printing its output.
