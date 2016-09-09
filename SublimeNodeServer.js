@@ -16,6 +16,8 @@ const server = net.createServer()
       buffer = Buffer.concat([buffer, chunk]);
       console.log('Received: %j', chunk.toString());
       console.log('Buffer: %j', buffer.toString());
+      socket.write("Packet: " + Date.now() + "\n");
+      // socket.end();
     });
     socket.on("error", err => {
       console.log("Socket error:", err);

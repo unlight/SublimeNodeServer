@@ -10,31 +10,63 @@ import threading
 
 import sublime
 
-SERVER_ADDRESS = "/tmp/sublime-node-server.sock"
+SERVER_ADDRESS = "127.0.0.1"
+SERVER_PORT = 7093
 SERVER_PATH = os.path.join(
     sublime.packages_path(),
     os.path.dirname(os.path.realpath(__file__)),
-    "index.js"
+    "SublimeNodeServer.js"
+    # "index.js"
 )
 
 def plugin_loaded():
-    """Called when the Sublime Text API is ready for use."""
-    if os.path.exists(SERVER_ADDRESS):
-        os.unlink(SERVER_ADDRESS)
+    # Called when the Sublime Text API is ready for use
+    print("ready")
+    client = NodeThreadingClient()
+    client.start()
 
-    SublimeNodeServer.thread = SublimeNodeServer(SERVER_ADDRESS, SERVER_PATH)
-    SublimeNodeServer.thread.start()
+    # client = socket.socket()
+    # client.connect((SERVER_ADDRESS, SERVER_PORT))
 
-    SublimeNodeServer.thread.client.send("Hello...")
-    SublimeNodeServer.thread.client.send("...world!")
+    # client.send(bytes(str("Hello from plugin"), 'UTF-8'))
+    # client.close()
+
+    # data = sock.recv(1024)
+    # sock.close()
+
+    # print(data)
+    # SublimeNodeServer.thread = SublimeNodeServer(SERVER_ADDRESS, SERVER_PATH)
+    # SublimeNodeServer.thread.start()
+
+    # SublimeNodeServer.thread.client.send("Hello...")
+    # SublimeNodeServer.thread.client.send("...world!")
 
 def plugin_unloaded():
-    """Called just before the plugin is unloaded."""
+    # Called just before the plugin is unloaded.
     if SublimeNodeServer.thread:
         SublimeNodeServer.thread.terminate()
 
+class NodeThreadingClient(threading.Thread):
+
+    def __init__(self):
+        threading.Thread.__init__(self, name = "NodeClientThread")
+        self.connected = False
+
+    def run(self):
+        client = socket.socket()
+        client.connect((SERVER_ADDRESS, SERVER_PORT))
+        client.send(bytes(str("Hello from plugin"), 'UTF-8'))
+        data = client.recv(16 * 1024)
+        print('Received:', repr(data))
+        client.close()
+
+    def terminate(self):
+        # Disconnects from the node server and terminates this thread.
+        self.connected = False
+
+
 class SublimeNodeServer(threading.Thread):
-    """Manages the node server and printing its output."""
+    # Manages the node server and printing its output.
 
     thread = None
 
@@ -99,7 +131,8 @@ class SublimeNodeClient(threading.Thread):
         self.queue = queue.Queue()
 
     def run(self):
-        client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        client = socket.socket()
+        client.connect((SERVER_ADDRESS, SERVER_PORT))
         end_time = time.time() + SublimeNodeClient.CONNECT_TIMEOUT
         while not self.connected:
             remaining_time = end_time - time.time()
@@ -131,4 +164,3 @@ class SublimeNodeClient(threading.Thread):
     def terminate(self):
         """Disconnects from the node server and terminates this thread."""
         self.connected = False
-
