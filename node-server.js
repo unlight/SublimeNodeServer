@@ -12,19 +12,21 @@ const server = net.createServer()
     .on("connection", socket => {
         socket.on("data", chunk => {
             try {
-                var data = JSON.parse(chunk.toString());    
+                var payload = JSON.parse(chunk.toString());    
             } catch (err) {
                 return socket.emit("error", err);
             }
-            data.socket = socket;
-            data.server = server;
-            var cmd = get(data, "command");
+            console.log("Incoming message: %j", payload);
+            payload.socket = socket;
+            payload.server = server;
+            var cmd = get(payload, "command");
             console.log("Command: " + cmd);
-            var func = get(commands, cmd, (data, callback) => callback());
-            func(data, (err, response) => {
+            var func = get(commands, cmd, (payload, callback) => callback());
+            func(payload, (err, response) => {
                 if (err) return socket.emit("error", err);
+                console.log("Responding: %j", response);
                 if (response) {
-                    socket.write(response);
+                    socket.write(JSON.stringify(response));
                 }
                 socket.end();
             });
@@ -39,22 +41,22 @@ const server = net.createServer()
     })
     .listen(SERVER_PORT, SERVER_ADDRESS, (err) => {
         const addr = server.address();
-        console.log("Listening %s:%d (%s)", addr.address, addr.port, addr.family);
+        console.log("Listening: %s:%d (%s)", addr.address, addr.port, addr.family);
         // server.close(); // Shutdowns the server
     });
 
 const commands = {
-    ping: (data, callback) => {
+    ping: (payload, callback) => {
         setTimeout(() => {
             var response = "Pong: " + new Date();
             callback(null, response);
         }, 1000);
     },
     echo: (payload, callback) => {
-        var data = get("data", payload, "No data");
-        callback(null, JSON.stringify(data));
+        var data = get(payload, "data", "No data");
+        callback(null, data);
     },
-    setup: (data, callback) => {
+    setup: (payload, callback) => {
         var options = {cwd: __dirname};
         var cmd = "npm i";
         child_process.exec(cmd, options, (error, stdout, stderr) => {
