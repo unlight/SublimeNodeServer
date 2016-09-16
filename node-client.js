@@ -1,6 +1,6 @@
 "use strict";
 var net = require("net");
-
+// Test node client.
 const SERVER_PORT = process.argv[2] || 7093;
 
 var client = new net.Socket();
