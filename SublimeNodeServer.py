@@ -38,11 +38,11 @@ def plugin_unloaded():
     print("plugin_unloaded", plugin_file_path())
     send_command("shutdown")
 
-def send_command_async(command, data = None):
-    thread = threading.Thread(target=send_command, args=(command, data))
+def send_command_async(command, data = None, callback = None):
+    thread = threading.Thread(target=send_command, args=(command, data, callback))
     thread.start()
 
-def send_command(command, data = None):
+def send_command(command, data = None, callback = None):
     client = socket.socket()
     client.connect((server_address, server_port))
     message = json.dumps({"command": command, "data": data})
@@ -51,6 +51,11 @@ def send_command(command, data = None):
     recv = client.recv(16 * 1024).decode('utf-8')
     print('recv:', recv)
     client.close()
+    # TODO: parse json
+    if callback is not None:
+        callback(recv)
+        return
+    return recv
 
 class NodeServerEventListener(sublime_plugin.EventListener):
     
@@ -59,10 +64,25 @@ class NodeServerEventListener(sublime_plugin.EventListener):
         if window is None or not window.views():
             send_command("shutdown")
 
+class TestNodeServerInsertCommand(sublime_plugin.TextCommand):
+    def run(self, edit, **args):
+        result = args["result"]
+        view = self.view
+        selection = view.sel()
+        selection1 = selection[0]
+        view.insert(edit, selection1.begin(), str(result))
+
 # view.run_command("test_node_server_ping")
 class TestNodeServerPingCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        send_command_async("ping")
+        view = self.view
+        selection = view.sel()
+        selection1 = selection[0]
+        def on_result(result):
+            # Do useful stuuf...
+            print("result", result)
+            self.view.run_command("test_node_server_insert", {"result": result})
+        send_command_async("ping", {}, on_result)
 
 # view.run_command("test_node_server_echo")
 class TestNodeServerEchoCommand(sublime_plugin.TextCommand):
