@@ -31,21 +31,25 @@ def server_process():
     else:
         proc = subprocess.Popen(cmd, cwd=package_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     outs, errs = proc.communicate()
-    print(outs)
+    print(outs.decode())
     plugin_info["server_proc_pid"] = proc.pid
 
 def plugin_unloaded():
     print("plugin_unloaded", plugin_file_path())
     send_command("shutdown")
-    
+
+def send_command_async(command, data = None):
+    thread = threading.Thread(target=send_command, args=(command, data))
+    thread.start()
+
 def send_command(command, data = None):
     client = socket.socket()
     client.connect((server_address, server_port))
     message = json.dumps({"command": command, "data": data})
-    print('message', message)
+    print('message:', message)
     client.send(message.encode('utf-8'))
     recv = client.recv(16 * 1024).decode('utf-8')
-    print('recv', recv)
+    print('recv:', recv)
     client.close()
 
 class NodeServerEventListener(sublime_plugin.EventListener):
@@ -58,7 +62,7 @@ class NodeServerEventListener(sublime_plugin.EventListener):
 # view.run_command("test_node_server_ping")
 class TestNodeServerPingCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        send_command("ping")
+        send_command_async("ping")
 
 # view.run_command("test_node_server_echo")
 class TestNodeServerEchoCommand(sublime_plugin.TextCommand):
