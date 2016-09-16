@@ -50,6 +50,10 @@ const commands = {
             callback(null, response);
         }, 1000);
     },
+    echo: (payload, callback) => {
+        var data = get("data", payload, "No data");
+        callback(null, JSON.stringify(data));
+    },
     setup: (data, callback) => {
         var options = {cwd: __dirname};
         var cmd = "npm i";

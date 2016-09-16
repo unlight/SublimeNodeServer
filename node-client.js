@@ -8,9 +8,9 @@ client.connect(SERVER_PORT, "127.0.0.1");
 client.on("connect", () => {
 	console.log("Connected to server");
 	// client.write("Hello, server! from Client.");
-	// client.write(JSON.stringify({command: "ping"}));
+	client.write(JSON.stringify({command: "ping"}));
 	// client.write(JSON.stringify({command: "shutdown"}));
-	client.write(JSON.stringify({command: "setup"}));
+	// client.write(JSON.stringify({command: "setup"}));
 });
 
 client.on("data", buffer => {
