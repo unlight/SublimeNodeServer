@@ -4,15 +4,19 @@ var net = require("net");
 const SERVER_PORT = process.argv[2] || 7093;
 
 var client = new net.Socket();
-client.connect(7093, '127.0.0.1');
+client.connect(SERVER_PORT, "127.0.0.1");
 client.on("connect", () => {
-	console.log('Connected to server.');
-	client.write('Hello, server! from Client.');
+	console.log("Connected to server");
+	// client.write("Hello, server! from Client.");
+	// client.write(JSON.stringify({command: "ping"}));
+	// client.write(JSON.stringify({command: "shutdown"}));
+	client.write(JSON.stringify({command: "setup"}));
 });
 
 client.on("data", buffer => {
-	console.log('Received: ' + buffer);
-	client.destroy();
+	var data = buffer.toString();
+	console.log("Server response:");
+	console.log(data);
 });
 
 client.on("error", err => {
@@ -20,5 +24,5 @@ client.on("error", err => {
 });
 
 client.on("close", function() {
-	console.log('Connection closed');
+	console.log("Connection closed");
 });
